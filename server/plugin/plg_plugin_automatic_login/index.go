@@ -1,4 +1,4 @@
-package plg_plugin_example
+package plg_plugin_automatic_login
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ var isInitialized = false
 
 func init() {
 	Hooks.Register.Onload(func() {
-		Log.Debug("Predefined backend plugin loaded...")
+		Log.Debug("Automatic Login Plugin loaded...")
 	})
 
 	Hooks.Register.Middleware(func(h HandlerFunc) HandlerFunc {
