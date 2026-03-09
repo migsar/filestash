@@ -15,7 +15,7 @@ import (
 	_ "github.com/mickael-kerjean/filestash/server/plugin/plg_security_scanner"
 	_ "github.com/mickael-kerjean/filestash/server/plugin/plg_security_svg"
 	_ "github.com/mickael-kerjean/filestash/server/plugin/plg_starter_http"
-	_ "github.com/mickael-kerjean/filestash/server/plugin/plg_plugin_predefined-backend"
+	_ "github.com/mickael-kerjean/filestash/server/plugin/plg_plugin_automatic_login"
 )
 
 func init() {
