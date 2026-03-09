@@ -12,14 +12,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Plugin struct {
-	Type   string
-	Enable bool
-}
-
 type Register struct{}
 type Get struct{}
-type All struct{}
 
 var Hooks = struct {
 	Get      Get
@@ -29,18 +23,30 @@ var Hooks = struct {
 	Register: Register{},
 }
 
+type Options struct {
+	ID string
+}
+
+type Option func(*Options)
+
+func WithID(id string) Option {
+	return func(o *Options) {
+		o.ID = id
+	}
+}
+
 /*
  * ProcessFileContentBeforeSend is a processing hooks used in plugins like:
  * 1. pluggable image transcoding service: plg_image_light, plg_image_bimg, plg_image_golang
  * 2. video transcoding service: plg_video_transcode
  * 3. disallow certain type of file: plg_security_svg
  */
-var process_file_content_before_send []func(io.ReadCloser, *App, *http.ResponseWriter, *http.Request) (io.ReadCloser, error)
+var process_file_content_before_send []func(io.ReadCloser, *App, *http.ResponseWriter, *http.Request) (io.ReadCloser, bool, error)
 
-func (this Register) ProcessFileContentBeforeSend(fn func(io.ReadCloser, *App, *http.ResponseWriter, *http.Request) (io.ReadCloser, error)) {
+func (this Register) ProcessFileContentBeforeSend(fn func(io.ReadCloser, *App, *http.ResponseWriter, *http.Request) (io.ReadCloser, bool, error)) {
 	process_file_content_before_send = append(process_file_content_before_send, fn)
 }
-func (this Get) ProcessFileContentBeforeSend() []func(io.ReadCloser, *App, *http.ResponseWriter, *http.Request) (io.ReadCloser, error) {
+func (this Get) ProcessFileContentBeforeSend() []func(io.ReadCloser, *App, *http.ResponseWriter, *http.Request) (io.ReadCloser, bool, error) {
 	return process_file_content_before_send
 }
 
@@ -52,12 +58,12 @@ func (this Get) ProcessFileContentBeforeSend() []func(io.ReadCloser, *App, *http
  * 3. plg_handler_syncthing to create better integration with syncthing
  * 4. plg_handler_console to server a full blown console for debugging the application
  */
-var http_endpoint []func(*mux.Router, *App) error
+var http_endpoint []func(*mux.Router) error
 
-func (this Register) HttpEndpoint(fn func(*mux.Router, *App) error) {
+func (this Register) HttpEndpoint(fn func(*mux.Router) error) {
 	http_endpoint = append(http_endpoint, fn)
 }
-func (this Get) HttpEndpoint() []func(*mux.Router, *App) error {
+func (this Get) HttpEndpoint() []func(*mux.Router) error {
 	return http_endpoint
 }
 
@@ -72,7 +78,7 @@ func (this Register) Static(www fs.FS, chroot string) {
 		} else if d.IsDir() {
 			return nil
 		}
-		this.HttpEndpoint(func(r *mux.Router, app *App) error {
+		this.HttpEndpoint(func(r *mux.Router) error {
 			r.PathPrefix("/" + strings.TrimPrefix(path, chroot)).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				f, err := www.Open(path)
 				if err != nil {
@@ -205,22 +211,23 @@ func (this Get) XDGOpen() []string {
 	return xdg_open
 }
 
-var cssOverride []func() string
+var cssOverride = map[string]string{}
 
-func (this Register) CSS(stylesheet string) {
-	cssOverride = append(cssOverride, func() string {
-		return stylesheet
-	})
-}
-
-func (this Register) CSSFunc(stylesheet func() string) {
-	cssOverride = append(cssOverride, stylesheet)
+func (this Register) CSS(stylesheet string, opts ...Option) { // idempotent
+	options := Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+	if options.ID == "" {
+		options.ID = QuickHash(stylesheet, 10)
+	}
+	cssOverride[options.ID] = stylesheet
 }
 
 func (this Get) CSS() string {
 	s := ""
-	for i := 0; i < len(cssOverride); i++ {
-		s += cssOverride[i]() + "\n"
+	for _, v := range cssOverride {
+		s += v + "\n"
 	}
 	return s
 }
@@ -257,6 +264,16 @@ func (this Get) Onload() []func() {
 	return afterload
 }
 
+var configChange []func()
+
+func (this Register) OnConfig(fn func()) {
+	configChange = append(configChange, fn)
+}
+
+func (this Get) OnConfig() []func() {
+	return configChange
+}
+
 var middlewares []func(HandlerFunc) HandlerFunc
 
 func (this Register) Middleware(m func(HandlerFunc) HandlerFunc) {
@@ -267,14 +284,25 @@ func (this Get) Middleware() []func(HandlerFunc) HandlerFunc {
 	return middlewares
 }
 
-var staticOverrides [][]byte
+var staticOverrides = map[string][]byte{}
 
-func (this Register) StaticPatch(pathFile []byte) {
-	staticOverrides = append(staticOverrides, pathFile)
+func (this Register) StaticPatch(patchFile []byte, opts ...Option) { // idempotent
+	options := Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+	if options.ID == "" {
+		options.ID = QuickHash(string(patchFile), 10)
+	}
+	staticOverrides[options.ID] = patchFile
 }
 
 func (this Get) StaticPatch() [][]byte {
-	return staticOverrides
+	s := [][]byte{}
+	for _, v := range staticOverrides {
+		s = append(s, v)
+	}
+	return s
 }
 
 var meta IMetadata
@@ -309,6 +337,16 @@ func (this Register) WorkflowAction(a IAction) {
 }
 func (this Get) WorkflowActions() []IAction {
 	return workflow_actions
+}
+
+var directory IDirectoryService
+
+func (this Register) DirectoryService(d IDirectoryService) {
+	directory = d
+}
+
+func (this Get) DirectoryService() IDirectoryService {
+	return directory
 }
 
 func init() {

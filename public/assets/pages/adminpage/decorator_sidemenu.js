@@ -11,7 +11,7 @@ import { isLoading } from "./model_audit.js";
 
 import "../../components/icon.js";
 
-export default function(ctrl) {
+export default function(ctrl, opts = {}) {
     return async function(render) {
         const $page = createElement(`
             <div class="component_page_admin">
@@ -58,12 +58,13 @@ export default function(ctrl) {
         render($page);
 
         // feature: setup the childrens
-        ctrl(createRender(qs($page, "[data-bind=\"admin\"]")));
+        ctrl(createRender(qs($page, "[data-bind=\"admin\"]")), opts);
 
         // feature: display the release version
         effect(getRelease().pipe(
             rxjs.map(({ version }) => version),
-            stateMutation(qs($page, "[data-bind=\"version\"]"), "textContent")
+            stateMutation(qs($page, "[data-bind=\"version\"]"), "textContent"),
+            rxjs.catchError(() => rxjs.EMPTY),
         ));
 
         // feature: logo serving as loading indicator

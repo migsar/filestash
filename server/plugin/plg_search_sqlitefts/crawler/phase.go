@@ -4,6 +4,7 @@ import (
 	"time"
 
 	. "github.com/mickael-kerjean/filestash/server/common"
+	. "github.com/mickael-kerjean/filestash/server/plugin/plg_search_sqlitefts/config"
 	"github.com/mickael-kerjean/filestash/server/plugin/plg_search_sqlitefts/indexer"
 )
 
@@ -11,7 +12,7 @@ func (this *Crawler) Run() {
 	if this.CurrentPhase == "" {
 		this.CurrentPhase = PHASE_EXPLORE
 	}
-	Log.Debug("Search::indexing Execute %s", this.CurrentPhase)
+	Log.Debug("search::phase Execute %s", this.CurrentPhase)
 
 	cycleExecute := func(fn func(indexer.Manager) bool) {
 		op, err := this.State.Change()
@@ -43,9 +44,10 @@ func (this *Crawler) Run() {
 		cycleExecute(this.Consolidate)
 		return
 	} else if this.CurrentPhase == PHASE_PAUSE {
-		time.Sleep(5 * time.Second)
-		this.Next()
+		cycleExecute(this.Pause)
+		return
 	}
+	Log.Error("plg_search_sqlitefts::error message=unknown_phase phase=%s", this.CurrentPhase)
 	return
 }
 

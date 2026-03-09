@@ -11,6 +11,7 @@ import (
 type IBackend interface {
 	Init(params map[string]string, app *App) (IBackend, error)
 	Ls(path string) ([]os.FileInfo, error)
+	Stat(path string) (os.FileInfo, error)
 	Cat(path string) (io.ReadCloser, error)
 	Mkdir(path string) error
 	Rm(path string) error
@@ -29,6 +30,7 @@ type IAuthentication interface {
 type IAuthorisation interface {
 	Ls(ctx *App, path string) error
 	Cat(ctx *App, path string) error
+	Stat(ctx *App, path string) error
 	Mkdir(ctx *App, path string) error
 	Rm(ctx *App, path string) error
 	Mv(ctx *App, from string, to string) error
@@ -86,6 +88,16 @@ type ITrigger interface {
 type IAction interface {
 	Manifest() WorkflowSpecs
 	Execute(params map[string]string, input map[string]string) (map[string]string, error)
+}
+
+type IDirectoryService interface {
+	Search(query string) ([]DirectoryUser, error)
+}
+
+type DirectoryUser struct {
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 type ITriggerEvent interface {

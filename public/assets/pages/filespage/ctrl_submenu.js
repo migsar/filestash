@@ -1,7 +1,7 @@
 import { createElement, createRender, createFragment, onDestroy } from "../../lib/skeleton/index.js";
 import rxjs, { effect, onClick, preventDefault } from "../../lib/rx.js";
 import { animate, slideXIn, slideYIn } from "../../lib/animate.js";
-import { basename, forwardURLParams } from "../../lib/path.js";
+import { basename, join, forwardURLParams } from "../../lib/path.js";
 import assert from "../../lib/assert.js";
 import { qs, qsa, safe } from "../../lib/dom.js";
 import { get as getConfig } from "../../model/config.js";
@@ -150,7 +150,8 @@ function componentLeft(render, { $scroll, getSelectionLength$ }) {
                     basename(path.replace(new RegExp("/$"), "")),
                 )).pipe(rxjs.mergeMap((val) => {
                     const [basepath] = extractPath(path);
-                    const newpath = basepath + val + (path.slice(-1) === "/" ? "/" : "");
+                    let newpath = join(location.origin + basepath, val);
+                    if (path.slice(-1) === "/" && newpath.slice(-1) !== "/") newpath += "/";
                     clearSelection();
                     clearCache(path);
                     clearCache(newpath);
@@ -234,7 +235,7 @@ function componentRight(render, { getSelectionLength$ }) {
             search,
             $page: render(createFragment(`
                 <form style="display: inline-block;" onsubmit="event.preventDefault()">
-                    <input value="${safe(search)}" class="hidden" placeholder="${t("search")}" name="q" id="searchInput" aria-label="${t("search")}" tabindex="-1" />
+                    <input value="${safe(search)}" class="hidden" placeholder="${t("search")}" name="q" id="searchInput" aria-label="${t("search")}" tabindex="-1" autocapitalize="none" />
                 </form>
                 <button data-action="search" title="${t("Search")}" aria-controls="searchInput">
                     <img class="component_icon" draggable="false" src="data:image/svg+xml;base64,${ICONS.MAGNIFYING_GLASS}" alt="search" />

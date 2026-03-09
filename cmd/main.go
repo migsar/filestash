@@ -5,24 +5,22 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
-
 	"github.com/mickael-kerjean/filestash"
 	"github.com/mickael-kerjean/filestash/server"
 	"github.com/mickael-kerjean/filestash/server/ctrl"
 	"github.com/mickael-kerjean/filestash/server/model"
-	"github.com/mickael-kerjean/filestash/server/workflow"
 
 	. "github.com/mickael-kerjean/filestash/server/common"
 	_ "github.com/mickael-kerjean/filestash/server/plugin"
+	_ "github.com/mickael-kerjean/filestash/server/pkg"
+	"github.com/mickael-kerjean/filestash/server/pkg/workflow"
 )
 
 func main() {
-	Run(mux.NewRouter(), App{})
+	Run(mux.NewRouter())
 }
 
-func Run(router *mux.Router, app App) {
-	Log.Info("Filestash %s starting", APP_VERSION)
+func Run(router *mux.Router) {
 	check(InitLogger(), "Logger init failed. err=%s")
 	check(InitConfig(), "Config init failed. err=%s")
 	check(workflow.Init(), "Worklow Initialisation failure. err=%s")
@@ -31,18 +29,18 @@ func Run(router *mux.Router, app App) {
 	if len(Hooks.Get.Starter()) == 0 {
 		check(ErrNotFound, "Missing starter plugin. err=%s")
 	}
-	for _, obj := range Hooks.Get.HttpEndpoint() {
-		obj(router, &app)
-	}
 	for _, fn := range Hooks.Get.Onload() {
 		fn()
 	}
-	server.Build(router, app)
+	for _, obj := range Hooks.Get.HttpEndpoint() {
+		obj(router)
+	}
+	server.Build(router)
 	server.PluginRoutes(router)
-	server.CatchAll(router, app)
 	if os.Getenv("DEBUG") == "true" {
 		server.DebugRoutes(router)
 	}
+	server.CatchAll(router)
 	var wg sync.WaitGroup
 	for _, obj := range Hooks.Get.Starter() {
 		wg.Add(1)

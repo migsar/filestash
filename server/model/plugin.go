@@ -19,11 +19,7 @@ type PluginImpl struct {
 }
 
 func PluginDiscovery() error {
-	f, err := os.Open(GetAbsolutePath(PLUGIN_PATH))
-	if err != nil {
-		return err
-	}
-	entries, err := f.ReadDir(0)
+	entries, err := os.ReadDir(GetAbsolutePath(PLUGIN_PATH))
 	if err != nil {
 		return err
 	}
@@ -35,7 +31,7 @@ func PluginDiscovery() error {
 		if strings.HasSuffix(fname, ".zip") == false {
 			continue
 		}
-		name, impl, err := InitModule(entry.Name())
+		name, impl, err := InitModule(fname)
 		if err != nil {
 			Log.Error("could not initialise module name=%s err=%s", entry.Name(), err.Error())
 			continue
@@ -60,6 +56,18 @@ func PluginDiscovery() error {
 					return err
 				}
 				Hooks.Register.Favicon(b)
+			case "middleware":
+				b, err := GetPluginFile(name, impl.Modules[i]["entrypoint"])
+				if err != nil {
+					return err
+				}
+				m, err := WasmAdapterForMiddleware(b)
+				if err != nil {
+					return err
+				}
+				Hooks.Register.Middleware(m)
+			case "http": // TODO
+				return ErrNotImplemented
 			}
 		}
 		PLUGINS[name] = impl
