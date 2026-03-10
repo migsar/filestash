@@ -1,4 +1,6 @@
 FROM docker.io/golang:1.25.2-trixie as builder
+
+RUN groupadd -r filestash && useradd -r -g filestash -m filestash
 WORKDIR /app
 
 RUN apt-get update > /dev/null && \
@@ -12,17 +14,15 @@ RUN apt-get update > /dev/null && \
 
 FROM docker.io/debian:13.1-slim
 WORKDIR /app/
-COPY --from=builder /app/dist/ .
+COPY --from=builder /app/dist/filestash /app/filestash
 RUN apt-get update > /dev/null && \
-    apt-get install -y libbrotli1 libsharpyuv0 && \
+    apt-get install -y ca-certificates libbrotli1 libsharpyuv0 && \
     useradd filestash && \
-    chown -R filestash:filestash /app/ && \
-    # find /app/data/ -type d -exec chmod 770 {} \; && \
-    # find /app/data/ -type f -exec chmod 760 {} \; && \
-    chmod 730 /app/filestash && \
+    mkdir /app/data && chown -R filestash:filestash /app/data \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/*
 
 USER filestash
+VOLUME ["/app/data"]
 CMD ["/app/filestash"]
 EXPOSE 8334

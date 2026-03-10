@@ -1,0 +1,83 @@
+{
+    "general": {
+        "name": "File Manager",
+        "port": null,
+        "host": null,
+        "secret_key": "5sGyVHtbI6KqLfhv",
+        "force_ssl": null,
+        "editor": null,
+        "logout": null,
+        "display_hidden": null,
+        "refresh_after_upload": null,
+        "upload_button": null,
+        "upload_pool_size": null,
+        "upload_chunk_size": null,
+        "buffer_size": null,
+        "filepage_default_view": null,
+        "filepage_default_sort": null,
+        "cookie_timeout": null,
+        "extended_session": null,
+        "custom_css": null,
+        "license": null
+    },
+    "features": {
+        "api": {
+            "enable": null
+        },
+        "share": {
+            "enable": null,
+            "default_access": null,
+            "redirect": null
+        },
+        "protection": {
+            "iframe": null,
+            "enable_chromecast": null,
+            "signature": null,
+            "disable_svg": null,
+            "zip_timeout": null,
+            "disable_csp": null,
+            "enable": null
+        },
+        "workflow": {
+            "enable": null,
+            "workers": null
+        },
+        "search": {
+            "explore_timeout": null
+        },
+        "mcp": {
+            "enable": null
+        },
+        "site": {
+            "enable": null,
+            "autoindex": null,
+            "cors_allow_origins": null
+        }
+    },
+    "log": {
+        "enable": null,
+        "level": "DEBUG",
+        "telemetry": null
+    },
+    "email": {
+        "server": null,
+        "port": null,
+        "username": null,
+        "password": null,
+        "from": null
+    },
+    "auth": {
+        "admin": "$2a$10$WKfc8aWfKjHQG/PCsR4VFOIK01XNF.u03QPWfvA7B6QSIq1ffaUtK"
+    },
+    "middleware": {
+        "identity_provider": {
+            "type": null
+        }
+    },
+    "connections": [
+        {
+            "label": "s3",
+            "type": "s3"
+        }
+    ]
+}

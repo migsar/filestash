@@ -34,5 +34,8 @@ filestash-enterprise
 # debug files
 cmd/data/**
 
+# Envvars
+.env*
+
 # AI assistent
 amp.id
