@@ -15,14 +15,17 @@ RUN apt-get update > /dev/null && \
 FROM docker.io/debian:13.1-slim
 WORKDIR /app/
 COPY --from=builder /app/dist/filestash /app/filestash
+COPY docker/setup /app/setup
 RUN apt-get update > /dev/null && \
     apt-get install -y ca-certificates libbrotli1 libsharpyuv0 && \
     useradd filestash && \
-    mkdir /app/data && chown -R filestash:filestash /app/data \
+    mkdir /app/data && chown -R filestash:filestash /app/data && \
+    chmod +x /app/setup/entrypoint.sh && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/*
 
+ENV PATH="/app:${PATH}"
 USER filestash
 VOLUME ["/app/data"]
-CMD ["/app/filestash"]
+ENTRYPOINT ["/app/setup/entrypoint.sh"]
 EXPOSE 8334
